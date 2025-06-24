@@ -86,9 +86,102 @@ app.get('/', async (req, res) => {
     })
 })
 
+// Авторизация
+app.get('/login', (req, res) => {
+    res.render('login');
+});
+
+app.post('/login', async (req, res) => {
+    // Логика авторизации и определения роли
+    const { login, password } = req.body;
+    const user = await db.findUser(login, password);
+    if (!user) return res.redirect('/login');
+
+    req.session.uid = user.id;
+    req.session.name = user.name;
+    req.session.role = user.role;
+
+    if (user.role === 'admin') return res.redirect('/requests');
+    return res.redirect('/');
+});
+
+// Пользовательские заявки
+app.get('/', async (req, res) => {
+    const requests = await db.getUserRequests(req.session.uid);
+    res.render('user/index', { requests });
+});
+
+app.get('/create', (req, res) => {
+    res.render('user/create');
+});
+
+app.post('/create', async (req, res) => {
+    await db.createRequest(req.session.uid, req.body);
+    res.redirect('/');
+});
+
+app.get('/edit/:id', async (req, res) => {
+    const request = await db.getRequestIfOwned(req.params.id, req.session.uid);
+    res.render('user/edit', { request });
+});
+
+app.post('/edit/:id', async (req, res) => {
+    await db.updateRequestIfOwned(req.params.id, req.session.uid, req.body);
+    res.redirect('/');
+});
+
+app.post('/clone/:id', async (req, res) => {
+    await db.cloneRequest(req.params.id, req.session.uid);
+    res.redirect('/');
+});
+
+// Админские заявки
+app.get('/requests', async (req, res) => {
+    const allRequests = await db.getAllRequests();
+    res.render('admin/requests', { allRequests });
+});
+
+app.post('/requests/update/:id', async (req, res) => {
+    await db.updateRequestFull(req.params.id, req.body);
+    res.redirect('/requests');
+});
+
+app.post('/requests/mass-update', async (req, res) => {
+    const { ids, status } = req.body;
+    await db.massUpdateStatuses(ids, status);
+    res.redirect('/requests');
+});
+
+// Архив
+app.get('/archive', async (req, res) => {
+    const archive = await db.getArchiveRequests();
+    res.render('admin/archive', { archive });
+});
+
+// Пользователи (только для админа)
+app.get('/users', async (req, res) => {
+    const users = await db.getUsersWithStats();
+    res.render('admin/users', { users });
+});
+
+app.get('/users/:id', async (req, res) => {
+    const requests = await db.getRequestsByUser(req.params.id);
+    res.render('admin/user-requests', { requests });
+});
+
+app.post('/users/:id/update', async (req, res) => {
+    await db.updateUser(req.params.id, req.body);
+    res.redirect('/users');
+});
+
+app.post('/users/:id/delete', async (req, res) => {
+    await db.deleteUser(req.params.id);
+    res.redirect('/users');
+});
+
 async function start(){
     app.listen(process.env.PORT, ()=> {
-        mlog('Сервер прогресса репорта - запущен')
+        mlog('Server has been started...')
         mlog('Порт: ',process.env.PORT)
     })
 }
