@@ -7,3 +7,69 @@
  16:34:50 Порт:  undefined
  16:51:01 Server has been started...
  16:51:01 Порт:  undefined
+ 16:51:44 Server has been started...
+ 16:51:44 Порт:  3000
+ 16:55:19 Критическая ошибка!  ReferenceError: req is not defined
+    at file:///C:/Users/Ilya/Documents/projects/buy-request-app/buyrequest.js:77:36
+    at ModuleJob.run (node:internal/modules/esm/module_job:274:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:644:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:98:5)
+ 17:10:56 Критическая ошибка!  ReferenceError: appDir is not defined
+    at file:///C:/Users/Ilya/Documents/projects/buy-request-app/buyrequest.js:40:23
+    at ModuleJob.run (node:internal/modules/esm/module_job:274:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:644:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:98:5)
+ 17:11:48 Критическая ошибка!  ReferenceError: appDir is not defined
+    at file:///C:/Users/Ilya/Documents/projects/buy-request-app/buyrequest.js:41:23
+    at ModuleJob.run (node:internal/modules/esm/module_job:274:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:644:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:98:5)
+ 17:16:09 Сервер успешно запущен на порту 3000
+ 17:16:09 Открыть в браузере: http://localhost:3000
+ 17:16:18 Сервер успешно запущен на порту 3000
+ 17:16:18 Открыть в браузере: http://localhost:3000
+ 18:01:20 Критическая ошибка!  ReferenceError: mysql is not defined
+    at file:///C:/Users/Ilya/Documents/projects/buy-request-app/buyrequest.js:187:20
+    at ModuleJob.run (node:internal/modules/esm/module_job:274:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:644:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:98:5)
+ 18:04:37 Критическая ошибка!  ReferenceError: mysql is not defined
+    at file:///C:/Users/Ilya/Documents/projects/buy-request-app/buyrequest.js:187:20
+    at ModuleJob.run (node:internal/modules/esm/module_job:274:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:644:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:98:5)
+ 18:09:40 Сервер успешно запущен на порту 3000
+ 18:09:40 Открыть в браузере: http://localhost:3000
+ 18:10:17 Сервер успешно запущен на порту 3000
+ 18:10:17 Открыть в браузере: http://localhost:3000
+ 18:32:25 Сервер успешно запущен на порту 3000
+ 18:46:26 Сервер успешно запущен на порту 3407
+ 18:46:32 Сервер успешно запущен на порту 3407
+ 18:46:34 Критическая ошибка!  Error: connect ECONNREFUSED 77.232.186.22:3306
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+ 18:46:34 Критическая ошибка!  Error: Connection lost: The server closed the connection.
+    at Socket.<anonymous> (C:\Users\Ilya\Documents\projects\buy-request-app\node_modules\mysql2\lib\base\connection.js:113:31)
+    at Socket.emit (node:events:507:28)
+    at TCP.<anonymous> (node:net:351:12)
+ 18:46:44 Сервер успешно запущен на порту 3000
+ 18:47:48 Сервер успешно запущен на порту 3000
+ 18:48:29 Сервер успешно запущен на порту 3000
+ 18:48:44 Сервер успешно запущен на порту 3000
+ 18:48:56 Сервер успешно запущен на порту 3000
+ 18:49:50 Критическая ошибка!  ReferenceError: PORT is not defined
+    at Server.<anonymous> (file:///C:/Users/Ilya/Documents/projects/buy-request-app/buyrequest.js:188:53)
+    at Server.f (C:\Users\Ilya\Documents\projects\buy-request-app\node_modules\once\once.js:25:25)
+    at Object.onceWrapper (node:events:621:28)
+    at Server.emit (node:events:519:35)
+    at emitListeningNT (node:net:1982:10)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+ 18:50:22 Сервер успешно запущен на порту 3000
+ 18:51:31 Сервер успешно запущен на порту 3000
+ 18:51:41 Сервер успешно запущен на порту 3000
+ 18:52:46 Сервер успешно запущен на порту 3407
+ 19:11:08 Сервер успешно запущен на порту 3407
+ 19:12:44 Сервер успешно запущен на порту 3407
+ 20:10:31 Сервер успешно запущен на порту 3000
+ 20:11:12 Сервер успешно запущен на порту 3000
+ 20:11:51 Сервер успешно запущен на порту undefined
+ 20:12:03 Сервер успешно запущен на порту 3000

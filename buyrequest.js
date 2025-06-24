@@ -1,114 +1,115 @@
-import {mlog,say,test} from './vendor/logs.js'
-import { format } from 'date-fns';
-var appDir = path.dirname(import.meta.url);
-appDir = appDir.split('///')
-appDir = appDir[1]
-console.log(appDir);
+import { mlog } from './vendor/logs.js';
+import { fileURLToPath } from 'url';
+import express from 'express';
+import exphbs from 'express-handlebars';
+import fileUpload from 'express-fileupload';
+import session from 'express-session';
+import cookieParser from 'cookie-parser';
+import path from 'path';
+import 'dotenv/config';
+import * as db from './vendor/db.mjs';
+import mysql from 'mysql2';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const TEMPFOLDER = path.join(__dirname, 'public/temp');
+const PORT = process.env.PORT || 3000;
 
 process.on('uncaughtException', (err) => {
     mlog('Критическая ошибка! ', err.stack);
 });
 
-import express from 'express'
-import exphbs from 'express-handlebars'
-import fileUpload from 'express-fileupload'
-import session from 'express-session'
-import cookieParser from 'cookie-parser'
-import path from 'path'
-import fs from 'fs-extra'
-import 'dotenv/config'
-import * as db from './vendor/db.mjs';
-import * as hlp from './vendor/hlp.mjs';
-import { type } from 'os';
-
 const app = express();
 const hbs = exphbs.create({
-defaultLayout: 'main',
-extname: 'hbs',
+    defaultLayout: 'main',
+    extname: 'hbs',
 });
 
-const TEMPFOLDER = path.join(appDir,'public/temp');
 
 app.engine('hbs', hbs.engine);
 app.set('view engine', 'hbs');
-app.set('views', 'views');
+app.set('views', path.join(__dirname, 'views'));
 
-if (test){
-    app.use(express.static(path.join(appDir, 'public')));
-    app.set('views', 'views');
-} else {
-    app.use(express.static(path.join('//',appDir, 'public')));
-    app.set('views',path.join('//',appDir, 'views'));
-}
-
-console.log(path.join(appDir, 'public'));
+// --- 4. MIDDLEWARE (ПРОМЕЖУТОЧНОЕ ПО) ---
+app.use(express.static(path.join(__dirname, 'public'))); // Раздача статики (css, js, images)
 app.use(cookieParser());
-app.use(express.urlencoded({ extended: true }));
-//app.use(fileupload());
+app.use(express.urlencoded({ extended: true })); // Для парсинга форм
+app.use(express.json()); // Для парсинга JSON-запросов
 app.set('trust proxy', 1);
 
-app.use(session({resave:true,saveUninitialized:false, secret: 'keyboard cat', cookie: 
-    {secure: false, // обязательно false на HTTPS
-    httpOnly: true}
+app.use(session({
+    secret: 'a very secret key should be here',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: false, // На локальном сервере (http) должно быть false
+        httpOnly: true,
+    }
 }));
+
 app.use(fileUpload({
-    useTempFiles : true,
-    tempFileDir : TEMPFOLDER,
-    defCharset: 'utf8',
-    defParamCharset: 'utf8'
+    useTempFiles: true,
+    tempFileDir: TEMPFOLDER,
 }));
 
-app.use(express.json()); // для application/json
+// Middleware для проверки авторизации на всех страницах, кроме /login
+app.use((req, res, next) => {
+    if (req.path === '/login' || req.session.uid) {
+        // Если пользователь на странице логина или уже авторизован, пропускаем дальше
+        return next();
+    }
+    // В остальных случаях - перенаправляем на логин
+    res.redirect('/login');
+});
 
-app.post('/data', async (req, res) => {
-    // console.log(req.body)
-    req.session.info = req.body
-    res.send('ok')
-})
 
-app.post('/datas', async (req, res) => {
-    console.log(req.body)
-    req.session.info = req.body
-    res.send('ok')
-})
+// --- 5. МАРШРУТЫ ПРИЛОЖЕНИЯ ---
 
-app.get('/', async (req, res) => {
-    //user,manager,admin
-    let roles = await db.get_roles(req.session.uid)
-    roles = roles.map(obj => obj.ROLE)
-    mlog(roles)
-    req.session.roles = roles
-    res.render('index', {
-        title: 'Прогресс репорт',
-        roles: req.session.roles,
-        name: req.session.name,
-        uid: req.session.uid
-    })
-})
-
-// Авторизация
+// -- Авторизация --
 app.get('/login', (req, res) => {
-    res.render('login');
+    // Используем layout: false, чтобы для страницы входа не применялся основной шаблон
+    res.render('login', { layout: false });
 });
 
 app.post('/login', async (req, res) => {
-    // Логика авторизации и определения роли
-    const { login, password } = req.body;
-    const user = await db.findUser(login, password);
-    if (!user) return res.redirect('/login');
+    try {
+        const { login, password } = req.body;
+        const user = await db.findUser(login, password);
 
-    req.session.uid = user.id;
-    req.session.name = user.name;
-    req.session.role = user.role;
+        if (!user) {
+            // Можно добавить сообщение об ошибке
+            return res.redirect('/login');
+        }
 
-    if (user.role === 'admin') return res.redirect('/requests');
-    return res.redirect('/');
+        // Сохраняем данные пользователя в сессию
+        req.session.uid = user.id;
+        req.session.name = user.name;
+
+        // Получаем роли пользователя и сохраняем их в сессию
+        const roles = (await db.get_roles(user.id)).map(obj => obj.ROLE);
+        req.session.roles = roles;
+        mlog(`Пользователь '${user.name}' вошел с ролями:`, roles);
+
+        // Перенаправляем в зависимости от роли
+        if (roles.includes('admin')) {
+            return res.redirect('/requests');
+        }
+        return res.redirect('/');
+
+    } catch (error) {
+        mlog('Ошибка при авторизации:', error);
+        res.redirect('/login');
+    }
 });
 
-// Пользовательские заявки
+// -- Маршруты для обычного пользователя --
 app.get('/', async (req, res) => {
     const requests = await db.getUserRequests(req.session.uid);
-    res.render('user/index', { requests });
+    res.render('user/index', {
+        title: 'Мои заявки',
+        requests,
+        name: req.session.name,
+        roles: req.session.roles // Роли уже есть в сессии
+    });
 });
 
 app.get('/create', (req, res) => {
@@ -135,10 +136,11 @@ app.post('/clone/:id', async (req, res) => {
     res.redirect('/');
 });
 
-// Админские заявки
+
+// -- Маршруты для админа (TODO: добавить проверку роли 'admin') --
 app.get('/requests', async (req, res) => {
     const allRequests = await db.getAllRequests();
-    res.render('admin/requests', { allRequests });
+    res.render('admin/requests', { allRequests, name: req.session.name, roles: req.session.roles });
 });
 
 app.post('/requests/update/:id', async (req, res) => {
@@ -155,18 +157,18 @@ app.post('/requests/mass-update', async (req, res) => {
 // Архив
 app.get('/archive', async (req, res) => {
     const archive = await db.getArchiveRequests();
-    res.render('admin/archive', { archive });
+    res.render('admin/archive', { archive, name: req.session.name, roles: req.session.roles });
 });
 
-// Пользователи (только для админа)
+// Пользователи
 app.get('/users', async (req, res) => {
     const users = await db.getUsersWithStats();
-    res.render('admin/users', { users });
+    res.render('admin/users', { users, name: req.session.name, roles: req.session.roles });
 });
 
 app.get('/users/:id', async (req, res) => {
     const requests = await db.getRequestsByUser(req.params.id);
-    res.render('admin/user-requests', { requests });
+    res.render('admin/user-requests', { requests, name: req.session.name, roles: req.session.roles });
 });
 
 app.post('/users/:id/update', async (req, res) => {
@@ -179,11 +181,15 @@ app.post('/users/:id/delete', async (req, res) => {
     res.redirect('/users');
 });
 
-async function start(){
-    app.listen(process.env.PORT, ()=> {
-        mlog('Server has been started...')
-        mlog('Порт: ',process.env.PORT)
-    })
+
+async function start() {
+    try {
+        app.listen(process.env.PORT, () => {
+            mlog(`Сервер успешно запущен на порту ${process.env.PORT}`);
+        });
+    } catch (e) {
+        mlog('Ошибка при запуске сервера:', e);
+    }
 }
 
-await start()
+start();
