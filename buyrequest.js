@@ -38,7 +38,7 @@ if (test){
     app.set('views', 'views');
 } else {
     app.use(express.static(path.join('//',appDir, 'public')));
-    app.set('views'.path.join('//',appDir, 'views'));
+    app.set('views',path.join('//',appDir, 'views'));
 }
 
 console.log(path.join(appDir, 'public'));
@@ -48,12 +48,12 @@ app.use(express.urlencoded({ extended: true }));
 app.set('trust proxy', 1);
 
 app.use(session({resave:true,saveUninitialized:false, secret: 'keyboard cat', cookie: 
-    {secure: false, // обязательно false на HTTP}
+    {secure: false, // обязательно false на HTTPS
     httpOnly: true}
 }));
 app.use(fileUpload({
     useTempFiles : true,
-    tempFileDir : TEMPFOUDER,
+    tempFileDir : TEMPFOLDER,
     defCharset: 'utf8',
     defParamCharset: 'utf8'
 }));
