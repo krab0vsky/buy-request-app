@@ -29,19 +29,18 @@ app.engine('hbs', hbs.engine);
 app.set('view engine', 'hbs');
 app.set('views', path.join(__dirname, 'views'));
 
-// --- 4. MIDDLEWARE (ПРОМЕЖУТОЧНОЕ ПО) ---
-app.use(express.static(path.join(__dirname, 'public'))); // Раздача статики (css, js, images)
+app.use(express.static(path.join(__dirname, 'public'))); 
 app.use(cookieParser());
-app.use(express.urlencoded({ extended: true })); // Для парсинга форм
-app.use(express.json()); // Для парсинга JSON-запросов
+app.use(express.urlencoded({ extended: true })); 
+app.use(express.json()); 
 app.set('trust proxy', 1);
 
 app.use(session({
-    secret: 'a very secret key should be here',
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: false, // На локальном сервере (http) должно быть false
+        secure: false, 
         httpOnly: true,
     }
 }));
@@ -51,22 +50,14 @@ app.use(fileUpload({
     tempFileDir: TEMPFOLDER,
 }));
 
-// Middleware для проверки авторизации на всех страницах, кроме /login
 app.use((req, res, next) => {
     if (req.path === '/login' || req.session.uid) {
-        // Если пользователь на странице логина или уже авторизован, пропускаем дальше
         return next();
     }
-    // В остальных случаях - перенаправляем на логин
     res.redirect('/login');
 });
 
-
-// --- 5. МАРШРУТЫ ПРИЛОЖЕНИЯ ---
-
-// -- Авторизация --
 app.get('/login', (req, res) => {
-    // Используем layout: false, чтобы для страницы входа не применялся основной шаблон
     res.render('login', { layout: false });
 });
 
@@ -76,20 +67,17 @@ app.post('/login', async (req, res) => {
         const user = await db.findUser(login, password);
 
         if (!user) {
-            // Можно добавить сообщение об ошибке
             return res.redirect('/login');
         }
 
-        // Сохраняем данные пользователя в сессию
         req.session.uid = user.id;
         req.session.name = user.name;
 
-        // Получаем роли пользователя и сохраняем их в сессию
         const roles = (await db.get_roles(user.id)).map(obj => obj.ROLE);
         req.session.roles = roles;
         mlog(`Пользователь '${user.name}' вошел с ролями:`, roles);
 
-        // Перенаправляем в зависимости от роли
+
         if (roles.includes('admin')) {
             return res.redirect('/requests');
         }
@@ -101,14 +89,13 @@ app.post('/login', async (req, res) => {
     }
 });
 
-// -- Маршруты для обычного пользователя --
 app.get('/', async (req, res) => {
     const requests = await db.getUserRequests(req.session.uid);
     res.render('user/index', {
         title: 'Мои заявки',
         requests,
         name: req.session.name,
-        roles: req.session.roles // Роли уже есть в сессии
+        roles: req.session.roles 
     });
 });
 
@@ -131,13 +118,7 @@ app.post('/edit/:id', async (req, res) => {
     res.redirect('/');
 });
 
-app.post('/clone/:id', async (req, res) => {
-    await db.cloneRequest(req.params.id, req.session.uid);
-    res.redirect('/');
-});
 
-
-// -- Маршруты для админа (TODO: добавить проверку роли 'admin') --
 app.get('/requests', async (req, res) => {
     const allRequests = await db.getAllRequests();
     res.render('admin/requests', { allRequests, name: req.session.name, roles: req.session.roles });
@@ -154,13 +135,11 @@ app.post('/requests/mass-update', async (req, res) => {
     res.redirect('/requests');
 });
 
-// Архив
 app.get('/archive', async (req, res) => {
     const archive = await db.getArchiveRequests();
     res.render('admin/archive', { archive, name: req.session.name, roles: req.session.roles });
 });
 
-// Пользователи
 app.get('/users', async (req, res) => {
     const users = await db.getUsersWithStats();
     res.render('admin/users', { users, name: req.session.name, roles: req.session.roles });
