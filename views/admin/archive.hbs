@@ -1,0 +1,26 @@
+<h2 class="mb-4">Архив заказов</h2>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Автор</th>
+      <th>Товар</th>
+      <th>Количество</th>
+      <th>Цена</th>
+      <th>Дата создания</th>
+      <th>Дата получения</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#each archive}}
+    <tr>
+      <td>{{this.user_id}}</td>
+      <td>{{this.title}}</td>
+      <td>{{this.quantity}}</td>
+      <td>{{this.price}}</td>
+      <td>{{this.created_at}}</td>
+      <td>{{this.updated_at}}</td>
+    </tr>
+    {{/each}}
+  </tbody>
+</table>

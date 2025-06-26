@@ -1,0 +1,45 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Мои заявки</h2>
+  <a href="/create" class="btn btn-success">Создать заявку</a>
+</div>
+
+{{#if requests.length}}
+<table class="table table-bordered table-hover">
+  <thead class="table-light">
+    <tr>
+      <th>Название</th>
+      <th>Количество</th>
+      <th>Цена</th>
+      <th>Ссылка</th>
+      <th>Желаемая дата</th>
+      <th>Статус</th>
+      <th>Дата поставки</th>
+      <th>Комментарий</th>
+      <th>Действие</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#each requests}}
+    <tr>
+      <td>{{title}}</td>
+      <td>{{quantity}}</td>
+      <td>{{price}}</td>
+      <td><a href="{{link}}" target="_blank">Ссылка</a></td>
+      <td>{{desired_date}}</td>
+      <td>{{status}}</td>
+      <td>{{delivery_date}}</td>
+      <td>{{comment}}</td>
+      <td>
+        {{#if (eq status "На рассмотрении")}}
+          <a href="/edit?id={{id}}" class="btn btn-sm btn-outline-primary">Редактировать</a>
+        {{else}}
+          <span class="text-muted">—</span>
+        {{/if}}
+      </td>
+    </tr>
+    {{/each}}
+  </tbody>
+</table>
+{{else}}
+  <p class="text-muted">Вы ещё не создали ни одной заявки.</p>
+{{/if}}

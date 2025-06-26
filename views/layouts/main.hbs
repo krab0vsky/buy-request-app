@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    {{> head }}
+  </head>
+  <body>
+    {{> navbar }}
+
+    <main class="container">
+      {{{ body }}}
+    </main>
+    {{#if success}}
+<div class="alert alert-success alert-dismissible fade show position-fixed top-0 end-0 m-3">
+  {{success}}
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{{/if}}
+
+{{#if error}}
+<div class="alert alert-danger alert-dismissible fade show position-fixed top-0 end-0 m-3">
+  {{error}}
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{{/if}}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

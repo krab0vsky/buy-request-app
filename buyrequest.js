@@ -1,5 +1,6 @@
 import { mlog } from './vendor/logs.js';
 import { fileURLToPath } from 'url';
+import { registerHelpers } from './vendor/hlp.mjs';
 import express from 'express';
 import exphbs from 'express-handlebars';
 import fileUpload from 'express-fileupload';
@@ -9,6 +10,7 @@ import path from 'path';
 import 'dotenv/config';
 import * as db from './vendor/db.mjs';
 import mysql from 'mysql2';
+import Handlebars from 'handlebars';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TEMPFOLDER = path.join(__dirname, 'public/temp');
@@ -24,6 +26,14 @@ const hbs = exphbs.create({
     extname: 'hbs',
 });
 
+registerHelpers(hbs);
+
+Handlebars.registerHelper('includes', function (array, value) {
+  return Array.isArray(array) && array.includes(value);
+});
+Handlebars.registerHelper('eq', function (a, b) {
+  return a === b;
+});
 
 app.engine('hbs', hbs.engine);
 app.set('view engine', 'hbs');
@@ -72,16 +82,14 @@ app.post('/login', async (req, res) => {
 
         req.session.uid = user.id;
         req.session.name = user.name;
+        req.session.roles = user.role;  
 
-        const roles = (await db.get_roles(user.id)).map(obj => obj.ROLE);
-        req.session.roles = roles;
-        mlog(`Пользователь '${user.name}' вошел с ролями:`, roles);
+        mlog(`Пользователь '${user.name}' вошел с ролями:`, req.session.roles);
 
-
-        if (roles.includes('admin')) {
+        if (req.session.roles === 'admin') {
             return res.redirect('/requests');
         }
-        return res.redirect('/');
+        return res.redirect('/user');
 
     } catch (error) {
         mlog('Ошибка при авторизации:', error);
@@ -89,7 +97,8 @@ app.post('/login', async (req, res) => {
     }
 });
 
-app.get('/', async (req, res) => {
+
+app.get('/user', async (req, res) => {
     const requests = await db.getUserRequests(req.session.uid);
     res.render('user/index', {
         title: 'Мои заявки',
@@ -104,24 +113,45 @@ app.get('/create', (req, res) => {
 });
 
 app.post('/create', async (req, res) => {
+  try {
     await db.createRequest(req.session.uid, req.body);
-    res.redirect('/');
+    req.session.success = 'Заявка успешно создана!';
+    res.redirect('/user');
+  } catch (error) {
+    req.session.error = 'Ошибка при создании заявки: ' + error.message;
+    res.redirect('/create');
+  }
 });
 
-app.get('/edit/:id', async (req, res) => {
-    const request = await db.getRequestIfOwned(req.params.id, req.session.uid);
+app.get('/edit', async (req, res) => {
+    const { id } = req.query;
+    const request = await db.getRequestIfOwned(id, req.session.uid);
+    if (!request) return res.status(404).send('Заявка не найдена или нет доступа');
     res.render('user/edit', { request });
 });
 
-app.post('/edit/:id', async (req, res) => {
-    await db.updateRequestIfOwned(req.params.id, req.session.uid, req.body);
-    res.redirect('/');
+app.post('/edit', async (req, res) => {
+  const { id, ...data } = req.body;
+  await db.updateRequestIfOwned(id, req.session.uid, data);
+  res.redirect('/user');
 });
 
 
 app.get('/requests', async (req, res) => {
-    const allRequests = await db.getAllRequests();
-    res.render('admin/requests', { allRequests, name: req.session.name, roles: req.session.roles });
+    const { status, user_id } = req.query;
+
+    const filter = {};
+    if (status) filter.status = status;
+    if (user_id) filter.user_id = user_id;
+
+    const allRequests = await db.getAllRequests(filter);
+
+    res.render('admin/requests', { 
+        allRequests, 
+        name: req.session.name, 
+        roles: req.session.roles,
+        currentFilter: filter
+    });
 });
 
 app.post('/requests/update/:id', async (req, res) => {

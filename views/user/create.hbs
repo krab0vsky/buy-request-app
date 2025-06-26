@@ -1,0 +1,118 @@
+<h2 class="mb-4">Создание новой заявки</h2>
+
+<form action="/create" method="POST" class="row g-3">
+  <div class="col-md-6">
+    <label for="title" class="form-label">Название товара</label>
+    <input type="text" id="title" name="title" class="form-control" required>
+  </div>
+
+  <div class="col-md-3">
+    <label for="quantity" class="form-label">Количество</label>
+    <input type="number" id="quantity" name="quantity" class="form-control" min="1" required>
+  </div>
+
+  <div class="col-md-3">
+    <label for="price" class="form-label">Цена за единицу</label>
+    <input type="number" id="price" name="price" class="form-control" min="0" step="0.01" required>
+  </div>
+
+  <div class="col-12">
+    <label for="link" class="form-label">Ссылка на товар</label>
+    <input type="url" id="link" name="link" class="form-control" required>
+  </div>
+
+  <div class="col-md-6">
+    <label for="desired_date" class="form-label">Желаемая дата доставки</label>
+    <input type="date" id="desired_date" name="desired_date" class="form-control" required>
+  </div>
+
+  <div class="col-12">
+    <button type="submit" class="btn btn-success">Создать заявку</button>
+    <a href="/" class="btn btn-secondary ms-2">Назад</a>
+  </div>
+</form>
+
+<script>
+  // Устанавливаем минимальную дату — сегодня
+  document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('desired_date');
+    const today = new Date().toISOString().split('T')[0];
+    input.min = today;
+  });
+
+  // Валидация формы при отправке (единый обработчик)
+  document.querySelector('form').addEventListener('submit', function(event) {
+    // Получаем все нужные поля формы
+    const title = document.getElementById('title');
+    const quantity = document.getElementById('quantity');
+    const price = document.getElementById('price');
+    const link = document.getElementById('link');
+    const desiredDate = document.getElementById('desired_date');
+    
+    // Сбрасываем предыдущие стили ошибок
+    [title, quantity, price, link, desiredDate].forEach(field => {
+      field.classList.remove('is-invalid');
+    });
+
+    // Проверка названия товара
+    if (title.value.trim() === '') {
+      showError(title, 'Пожалуйста, введите название товара');
+      event.preventDefault();
+      return;
+    }
+    
+    // Проверка количества
+    if (quantity.value <= 0 || isNaN(quantity.value)) {
+      showError(quantity, 'Количество должно быть числом больше нуля');
+      event.preventDefault();
+      return;
+    }
+    
+    // Проверка цены
+    const priceValue = parseFloat(price.value);
+    if (priceValue <= 0 || isNaN(priceValue)) {
+      showError(price, 'Цена должна быть числом больше нуля');
+      event.preventDefault();
+      return;
+    }
+    
+    if (priceValue > 1000000) {
+      showError(price, 'Цена слишком высокая (максимум 1 000 000)');
+      event.preventDefault();
+      return;
+    }
+    
+    // Проверка ссылки
+    try {
+      new URL(link.value);
+    } catch (error) {
+      showError(link, 'Введите корректную ссылку (начинается с http:// или https://)');
+      event.preventDefault();
+      return;
+    }
+    
+    // Проверка даты
+    const today = new Date().toISOString().split('T')[0];
+    if (desiredDate.value < today) {
+      showError(desiredDate, 'Дата доставки не может быть в прошлом');
+      event.preventDefault();
+      return;
+    }
+  });
+
+  // Функция для отображения ошибок
+  function showError(field, message) {
+    field.classList.add('is-invalid');
+    
+    // Показываем сообщение об ошибке
+    let errorElement = field.nextElementSibling;
+    if (!errorElement || !errorElement.classList.contains('invalid-feedback')) {
+      errorElement = document.createElement('div');
+      errorElement.className = 'invalid-feedback';
+      field.parentNode.appendChild(errorElement);
+    }
+    errorElement.textContent = message;
+    
+    field.focus();
+  }
+</script>
